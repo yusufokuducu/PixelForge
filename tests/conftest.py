@@ -10,6 +10,29 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+# Mock Qt if not available (for CI without display)
+try:
+    from PySide6.QtGui import QImage, QPixmap
+except ImportError:
+    # Create mock classes for headless testing
+    class QImage:
+        def __init__(self, *args, **kwargs):
+            pass
+    
+    class QPixmap:
+        def __init__(self, *args, **kwargs):
+            pass
+    
+    # Inject mocks into sys.modules so image_utils can import them
+    import types
+    mock_qt = types.ModuleType('PySide6')
+    mock_qt_gui = types.ModuleType('PySide6.QtGui')
+    mock_qt_gui.QImage = QImage
+    mock_qt_gui.QPixmap = QPixmap
+    sys.modules['PySide6'] = mock_qt
+    sys.modules['PySide6.QtGui'] = mock_qt_gui
+
+
 @pytest.fixture
 def test_image_rgb():
     """
